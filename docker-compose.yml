@@ -1,0 +1,40 @@
+version: "3.3"
+x-environment: &environment
+  environment:
+    WEBAPP_URL: ${DOMAIN}
+    DATABASE_URL: "postgresql://postgres:${ADMIN_PASSWORD}@postgres:5432/formbricks?schema=public"
+    PRISMA_GENERATE_DATAPROXY:
+    NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    NEXTAUTH_URL: https://${DOMAIN}
+    POSTGRES_PASSWORD: ${ADMIN_PASSWORD}
+
+services:
+  postgres:
+    restart: always
+    image: elestio/postgres:15
+    ports:
+      - 172.17.0.1:2432:5432
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
+    <<: *environment
+
+  formbricks:
+    restart: always
+    image: formbricks/formbricks:${SOFTWARE_VERSION_TAG}
+    depends_on:
+      - postgres
+    ports:
+      - 172.17.0.1:3765:3000
+    <<: *environment
+
+  pgadmin4:
+    image: dpage/pgadmin4:latest
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${ADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${ADMIN_PASSWORD}
+      PGADMIN_LISTEN_PORT: 8080
+    ports:
+      - "172.17.0.1:8180:8080"
+    volumes:
+      - ./servers.json:/pgadmin4/servers.json
